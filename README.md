@@ -37,9 +37,11 @@ npm run preview
 
 ## 测试
 
-版本比较与合并的回归测试基于 Vitest，统一入口：
+版本比较与合并的回归测试基于 Vitest，统一入口（在 `frontend/` 目录下执行）：
 
 ```bash
+cd frontend
+npm install   # 首次或干净检出后
 npm test          # 单次运行全部用例
 npm run test:watch # 监听模式
 ```
