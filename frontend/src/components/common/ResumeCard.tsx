@@ -1,5 +1,5 @@
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
-import { Copy, Download, Edit3, MoreVertical, Trash2 } from 'lucide-react';
+import { Copy, Download, Edit3, GitCompare, MoreVertical, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getTemplateById } from '../../stores/template';
 import { Resume } from '../../types/resume';
@@ -9,9 +9,10 @@ interface ResumeCardProps {
   resume: Resume;
   onDuplicate: (resumeId: string) => void;
   onDelete: (resumeId: string) => void;
+  onCompare: (targetResumeId: string) => void;
 }
 
-export function ResumeCard({ resume, onDuplicate, onDelete }: ResumeCardProps) {
+export function ResumeCard({ resume, onDuplicate, onDelete, onCompare }: ResumeCardProps) {
   const template = getTemplateById(resume.templateId);
   const enabledSections = resume.sections.filter((section) => section.enabled).length;
 
@@ -28,6 +29,15 @@ export function ResumeCard({ resume, onDuplicate, onDelete }: ResumeCardProps) {
               <MoreVertical size={18} aria-hidden />
             </MenuButton>
             <MenuItems className="absolute right-0 z-20 mt-2 w-44 border border-[var(--border)] bg-[var(--surface)] p-1 shadow-panel">
+              <MenuItem>
+                <button
+                  className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left text-sm data-[focus]:bg-[var(--surface-alt)]"
+                  type="button"
+                  onClick={() => onCompare(resume.id)}
+                >
+                  <GitCompare size={15} aria-hidden /> 比较合并
+                </button>
+              </MenuItem>
               <MenuItem>
                 <button
                   className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left text-sm data-[focus]:bg-[var(--surface-alt)]"

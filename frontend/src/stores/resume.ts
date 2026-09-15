@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { EducationLevel, SkillCategory, SkillLevel } from '../types/enums';
 import { Resume, ResumeBasicInfo, ResumeSection, ResumeSectionType } from '../types/resume';
 import { createId } from '../utils/format';
+import { mergeChanges } from '../utils/resumeDiff';
 import { readStorage, storageKeys, writeStorage } from '../utils/storage';
 import { useTemplateStore } from './template';
 
@@ -109,6 +110,8 @@ interface ResumeState {
   updateBasicInfo: (resumeId: string, patch: Partial<ResumeBasicInfo>) => void;
   reorderSections: (resumeId: string, sectionIds: ResumeSectionType[]) => void;
   toggleSection: (resumeId: string, sectionId: ResumeSectionType) => void;
+  /** 将来源版本的选定变化合并进指定版本；返回实际应用与跳过的变化数 */
+  mergeResumeChanges: (targetResumeId: string, sourceResumeId: string, changeIds: string[]) => { applied: number; skipped: number } | null;
   replaceResumes: (resumes: Resume[], activeResumeId?: string | null) => void;
 }
 
@@ -225,6 +228,24 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   replaceResumes: (resumes, activeResumeId) => {
     set({ resumes, activeResumeId: activeResumeId ?? resumes[0]?.id ?? null });
     persist(get());
+  },
+  mergeResumeChanges: (targetResumeId, sourceResumeId, changeIds) => {
+    const target = get().resumes.find((resume) => resume.id === targetResumeId);
+    const source = get().resumes.find((resume) => resume.id === sourceResumeId);
+    if (!target || !source || changeIds.length === 0) {
+      return null;
+    }
+
+    const { resume: merged, applied, skipped } = mergeChanges(target, source, changeIds);
+    if (applied === 0) {
+      return { applied, skipped };
+    }
+
+    set((state) => ({
+      resumes: state.resumes.map((resume) => (resume.id === targetResumeId ? merged : resume)),
+    }));
+    persist(get());
+    return { applied, skipped };
   },
 }));
 

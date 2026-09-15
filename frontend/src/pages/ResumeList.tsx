@@ -1,8 +1,9 @@
-import { ChangeEvent, useRef } from 'react';
+import { ChangeEvent, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileJson, FilePlus2, Upload } from 'lucide-react';
+import { FileJson, FilePlus2, GitCompare, Upload } from 'lucide-react';
 import { readWorkspaceSnapshot, writeWorkspaceSnapshot, WorkspaceSnapshot } from '../api/storage';
 import { Button } from '../components/common/Button';
+import { CompareMergeModal } from '../components/common/CompareMergeModal';
 import { EmptyState } from '../components/common/EmptyState';
 import { ResumeCard } from '../components/common/ResumeCard';
 import { defaultProfile } from '../stores/profile';
@@ -12,6 +13,8 @@ import { downloadJson, readJsonFile } from '../utils/storage';
 export function ResumeList() {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [compareTargetId, setCompareTargetId] = useState<string | null>(null);
   const resumes = useResumeStore((state) => state.resumes);
   const createResume = useResumeStore((state) => state.createResume);
   const duplicateResume = useResumeStore((state) => state.duplicateResume);
@@ -20,6 +23,11 @@ export function ResumeList() {
   const handleCreate = () => {
     const id = createResume();
     navigate(`/resumes/${id}/edit`);
+  };
+
+  const openCompare = (targetId: string | null = null) => {
+    setCompareTargetId(targetId);
+    setCompareOpen(true);
   };
 
   const handleExportJson = () => {
@@ -45,6 +53,14 @@ export function ResumeList() {
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">管理多个岗位版本，复制后可保留结构并快速改写内容。</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            icon={<GitCompare size={16} aria-hidden />}
+            onClick={() => openCompare(null)}
+            disabled={resumes.length < 2}
+            title={resumes.length < 2 ? '至少需要两个版本才能比较' : '选择来源版本，与当前版本比较并逐项合并'}
+          >
+            比较合并
+          </Button>
           <Button icon={<FileJson size={16} aria-hidden />} onClick={handleExportJson}>
             导出 JSON
           </Button>
@@ -71,11 +87,18 @@ export function ResumeList() {
       ) : (
         <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {resumes.map((resume) => (
-            <ResumeCard key={resume.id} resume={resume} onDelete={deleteResume} onDuplicate={duplicateResume} />
+            <ResumeCard
+              key={resume.id}
+              resume={resume}
+              onDelete={deleteResume}
+              onDuplicate={duplicateResume}
+              onCompare={openCompare}
+            />
           ))}
         </div>
       )}
+
+      <CompareMergeModal open={compareOpen} onClose={() => setCompareOpen(false)} initialTargetId={compareTargetId} />
     </div>
   );
 }
-
