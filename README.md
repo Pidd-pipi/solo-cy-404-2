@@ -35,6 +35,23 @@ npm run build
 npm run preview
 ```
 
+## 测试
+
+版本比较与合并的回归测试基于 Vitest，统一入口：
+
+```bash
+npm test          # 单次运行全部用例
+npm run test:watch # 监听模式
+```
+
+用例位于 `src/test/`：
+
+- `resumeDiff.test.ts`：差异与合并边界——头像变化、来源为空不清空、实体整体换序、同身份多条按出现顺序配对、精确移除、数组字段换序、部分合并、重复合并幂等。
+- `resumeStore.test.ts`：store 集成，以及通过重置模块、从 localStorage 重建 store 来模拟「刷新后结果仍在」。
+
+失败时报告会定位到具体文件 / 用例 / 断言行，并附带实际差异明细。
+
+
 ## 技术栈
 
 | 分类 | 技术 |
