@@ -29,21 +29,51 @@ function renderValue(field: string, value: string): string {
   return value;
 }
 
-const kindMeta: Record<DiffKind, { label: string; badgeClass: string; accent: string }> = {
+type FieldDiffLike = { field: string; label: string; image?: boolean; currentValue: string; sourceValue: string };
+
+function isImageField(field: FieldDiffLike): boolean {
+  return Boolean(field.image);
+}
+
+function ValueChip({ field, value, tone }: { field: FieldDiffLike; value: string; tone: 'old' | 'new' }) {
+  if (isImageField(field)) {
+    return value ? (
+      <img
+        src={value}
+        alt={`${field.label}预览`}
+        className="h-11 w-11 rounded-sm border border-[var(--border)] object-cover"
+      />
+    ) : (
+      <span className="rounded-sm bg-[color:color-mix(in_srgb,var(--muted)_12%,transparent)] px-2 py-0.5 text-xs text-[var(--muted)]">
+        （无头像）
+      </span>
+    );
+  }
+  const text = renderValue(field.field, value);
+  if (tone === 'old') {
+    return (
+      <span className="rounded-sm bg-[color:color-mix(in_srgb,var(--danger)_10%,transparent)] px-2 py-0.5 line-through decoration-[var(--danger)]/60">
+        {text}
+      </span>
+    );
+  }
+  return (
+    <span className="rounded-sm bg-[var(--accent-soft)] px-2 py-0.5 text-[var(--accent-strong)]">{text}</span>
+  );
+}
+
+const kindMeta: Record<DiffKind, { label: string; badgeClass: string }> = {
   added: {
     label: '新增',
     badgeClass: 'bg-[var(--accent-soft)] text-[var(--accent-strong)]',
-    accent: 'text-[var(--accent-strong)]',
   },
   removed: {
     label: '移除',
     badgeClass: 'bg-[color:color-mix(in_srgb,var(--danger)_15%,transparent)] text-[var(--danger)]',
-    accent: 'text-[var(--danger)]',
   },
   modified: {
     label: '修改',
     badgeClass: 'bg-[color:color-mix(in_srgb,var(--gold)_20%,transparent)] text-[var(--gold)]',
-    accent: 'text-[var(--gold)]',
   },
 };
 
@@ -321,6 +351,11 @@ function ChangeRow({
         <div className="flex flex-wrap items-center gap-2">
           <span className={`rounded-sm px-2 py-0.5 text-xs font-semibold ${meta.badgeClass}`}>{meta.label}</span>
           <span className="text-sm font-semibold">{change.itemLabel}</span>
+          {change.duplicate ? (
+            <span className="rounded-sm bg-[var(--surface-alt)] px-2 py-0.5 text-xs text-[var(--muted)]">
+              第 {change.occurrence} 条
+            </span>
+          ) : null}
           {change.kind === 'modified' ? <span className="text-xs text-[var(--muted)]">· {change.fields[0].label}</span> : null}
         </div>
         <div className="mt-2 space-y-1 text-sm">
@@ -328,31 +363,23 @@ function ChangeRow({
             change.fields.map((field) => (
               <p key={field.field} className="flex flex-wrap items-center gap-2">
                 <span className="text-xs text-[var(--muted)]">{field.label}</span>
-                <span className="rounded-sm bg-[color:color-mix(in_srgb,var(--danger)_10%,transparent)] px-2 py-0.5 line-through decoration-[var(--danger)]/60">
-                  {renderValue(field.field, field.currentValue)}
-                </span>
+                <ValueChip field={field} value={field.currentValue} tone="old" />
                 <ArrowRight size={13} aria-hidden className="text-[var(--muted)]" />
-                <span className="rounded-sm bg-[var(--accent-soft)] px-2 py-0.5 text-[var(--accent-strong)]">
-                  {renderValue(field.field, field.sourceValue)}
-                </span>
+                <ValueChip field={field} value={field.sourceValue} tone="new" />
               </p>
             ))}
           {change.kind === 'added' &&
             change.fields.map((field) => (
               <p key={field.field} className="flex flex-wrap items-center gap-2">
                 <span className="text-xs text-[var(--muted)]">{field.label}</span>
-                <span className={`rounded-sm bg-[var(--accent-soft)] px-2 py-0.5 ${meta.accent}`}>
-                  {renderValue(field.field, field.sourceValue)}
-                </span>
+                <ValueChip field={field} value={field.sourceValue} tone="new" />
               </p>
             ))}
           {change.kind === 'removed' &&
             change.fields.map((field) => (
               <p key={field.field} className="flex flex-wrap items-center gap-2">
                 <span className="text-xs text-[var(--muted)]">{field.label}</span>
-                <span className="rounded-sm bg-[color:color-mix(in_srgb,var(--danger)_10%,transparent)] px-2 py-0.5">
-                  {renderValue(field.field, field.currentValue)}
-                </span>
+                <ValueChip field={field} value={field.currentValue} tone="old" />
               </p>
             ))}
         </div>
